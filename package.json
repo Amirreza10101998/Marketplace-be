@@ -1,0 +1,29 @@
+{
+  "name": "marketplace-be",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js "
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amirreza10101998/Marketplace-be.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Amirreza10101998/Marketplace-be/issues"
+  },
+  "homepage": "https://github.com/Amirreza10101998/Marketplace-be#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-list-endpoints": "^6.0.0",
+    "nodemon": "^2.0.21",
+    "uniqid": "^5.4.0"
+  }
+}
