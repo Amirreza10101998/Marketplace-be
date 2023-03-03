@@ -3,6 +3,7 @@ import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import uniqid from "uniqid"
+import { parseFile, uploadImage } from "../utilities/uploads/index.js"
 
 /*-----Global Functions-----*/
 const getProductsFilePath = () => {
@@ -110,5 +111,44 @@ router.put("/:id", async (req, res, next) => {
     res.status(500).send({ message: error.message });
   }
 });
+
+/* 5. Upload an image */
+router.post("/:id/upload", parseFile.single("upload"), async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const products = await getProductsArray();
+
+    const productIndex = products.findIndex((product) => product.id === productId);
+    if (productIndex === -1) {
+      return res.status(404).send({ message: `Product with id ${productId} not found` });
+    }
+
+    const image = req.file;
+    if (!image) {
+      return res.status(400).send({ message: "Image file is required" });
+    }
+
+    // Save image to disk or cloud storage and get link
+    const imageUrl = await uploadImage(req, res, next);
+
+    // Update product's image URL
+    products[productIndex].imageUrl = imageUrl;
+    products[productIndex].updatedAt = new Date();
+
+    await saveProducts(products);
+
+    res.send({ message: "Product image updated successfully", product: products[productIndex] });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
+
+
+
+
+
+
 
 export default router;
