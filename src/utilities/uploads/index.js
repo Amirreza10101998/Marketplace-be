@@ -20,7 +20,7 @@ export const uploadImage = (req, res, next) => {
       const fileName = `${req.params.id}${extname}`;
       const pathToFile = path.join(getPublicFilePath(), fileName);
       fs.writeFileSync(pathToFile, buffer);
-      const link = `http://localhost:3001/public/${fileName}`;
+      const link = `http://localhost:3001/${fileName}`;
   
       // Return link to image
       return link;

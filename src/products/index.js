@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import uniqid from "uniqid"
 import { parseFile, uploadImage } from "../utilities/uploads/index.js"
 
-/*-----Global Functions-----*/
+/*----------Global Functions----------*/
 const getProductsFilePath = () => {
   const _filename = fileURLToPath(import.meta.url);
   const _dirname = dirname(_filename);
@@ -35,16 +35,44 @@ const getProductById = async (id) => {
   const products = await getProducts();
   const singleProduct = products.find((singleProduct) => singleProduct.id === id);
 
-  return singleProduct;
-}
+  if (!singleProduct) {
+    return null;
+  }
+
+  const reviews = getReviewsArray().filter((review) => review.productId === id);
+
+  return { ...singleProduct, reviews };
+};
 
 const saveProducts = async (products) => {
   const productsFilePath = await getProductsFilePath();
   fs.writeFileSync(productsFilePath, JSON.stringify(products));
 }
 
+const getReviewsFilePath = () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const reviewsFilePath = path.join(__dirname, "reviews.json");
+
+  return reviewsFilePath
+};
+
+const getReviewsArray = () => {
+  const fileAsBuffer = fs.readFileSync(getReviewsFilePath());
+  const fileAsString = fileAsBuffer.toString();
+  const fileAsJSONArray = JSON.parse(fileAsString);
+
+  return fileAsJSONArray;
+}
+
+const saveReviews = async (reviews) => {
+  const reviewsFilePath = await getReviewsFilePath();
+  fs.writeFileSync(reviewsFilePath, JSON.stringify(reviews));
+};
+
 const router = express.Router();
 
+/*----------Products----------*/
 /* 1. Returns list of products */
 router.get("/", async (req, res, next) => {
   try {
@@ -143,12 +171,34 @@ router.post("/:id/upload", parseFile.single("upload"), async (req, res, next) =>
   }
 });
 
+/*----------Reviews----------*/
+/* 1. Post a product review */
+router.post("/:productId/reviews", async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    const products = await getProductsArray();
 
+    const productIndex = products.findIndex((product) => product.id === productId);
+    if (productIndex === -1) {
+      return res.status(404).send({ message: `Product with id ${productId} not found` });
+    }
 
+    const newReview = {
+      id: uniqid(),
+      ...req.body,
+      productId: productId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
+    const reviews = getReviewsArray();
+    reviews.push(newReview);
+    await saveReviews(reviews);
 
-
-
-
+    res.send(newReview);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
 
 export default router;

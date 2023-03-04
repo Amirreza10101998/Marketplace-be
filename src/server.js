@@ -30,6 +30,14 @@ server.use(express.static(getPublicFilePath()));
 /*-----Routers-----*/
 server.use("/products", productsRouter);
 
+const getReviewsFilePath = () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const reviewsFilePath = path.join(__dirname, "reviews", "reviews.json");
+
+  return reviewsFilePath
+};
+
 
 console.table(listEndpoints(server));
 
