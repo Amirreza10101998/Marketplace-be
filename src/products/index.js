@@ -14,15 +14,6 @@ const getProductsFilePath = () => {
   return productsFilePath;
 };
 
-const getProducts = async () => {
-  const productsFilePath = await getProductsFilePath();
-  const fileAsBuffer = fs.readFileSync(productsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsJSON = JSON.parse(fileAsString);
-
-  return fileAsJSON;
-};
-
 const getProductsArray = () => {
   const fileAsBuffer = fs.readFileSync(getProductsFilePath());
   const fileAsString = fileAsBuffer.toString();
@@ -39,7 +30,7 @@ const getProductById = async (id) => {
     return null;
   }
 
-  const reviews = getReviewsArray().filter((review) => review.productId === id);
+  const reviews = getReviews().filter((review) => review.productId === id);
 
   return { ...singleProduct, reviews };
 };
@@ -57,7 +48,7 @@ const getReviewsFilePath = () => {
   return reviewsFilePath
 };
 
-const getReviewsArray = () => {
+const getReviews = () => {
   const fileAsBuffer = fs.readFileSync(getReviewsFilePath());
   const fileAsString = fileAsBuffer.toString();
   const fileAsJSONArray = JSON.parse(fileAsString);
@@ -191,7 +182,7 @@ router.post("/:productId/reviews", async (req, res, next) => {
       updatedAt: new Date(),
     };
 
-    const reviews = getReviewsArray();
+    const reviews = getReviews();
     reviews.push(newReview);
     await saveReviews(reviews);
 
@@ -200,5 +191,28 @@ router.post("/:productId/reviews", async (req, res, next) => {
     res.status(500).send({ message: error.message });
   }
 });
+
+/* 2. Get a list of product reviews */
+router.get("/:productId/reviews", async (req,res,next) => {
+  try {
+    const fileAsJSON = await getReviews();
+    res.send(fileAsJSON) 
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+/* 3. Get a single product reviews */
+router.get("/:productId/reviews/:reviewId", async (req,res,next) => {
+  try {
+    
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+})
+
+
+
+
 
 export default router;
