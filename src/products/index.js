@@ -23,16 +23,14 @@ const getProductsArray = () => {
 };
 
 const getProductById = async (id) => {
-  const products = await getProducts();
+  const products = await getProductsArray();
   const singleProduct = products.find((singleProduct) => singleProduct.id === id);
 
   if (!singleProduct) {
     return null;
   }
 
-  const reviews = getReviews().filter((review) => review.productId === id);
-
-  return { ...singleProduct, reviews };
+  return {singleProduct};
 };
 
 const saveProducts = async (products) => {
@@ -56,6 +54,17 @@ const getReviews = () => {
   return fileAsJSONArray;
 }
 
+const getReviewsById = async (id) => {
+  const reviews = await getReviews();
+  const singleReview = reviews.find((singleReview) => singleReview.id === id);
+
+  if (!singleReview) {
+    return null
+  }
+
+  return {singleReview}
+}
+
 const saveReviews = async (reviews) => {
   const reviewsFilePath = await getReviewsFilePath();
   fs.writeFileSync(reviewsFilePath, JSON.stringify(reviews));
@@ -67,7 +76,7 @@ const router = express.Router();
 /* 1. Returns list of products */
 router.get("/", async (req, res, next) => {
   try {
-    const fileAsJSON = await getProducts();
+    const fileAsJSON = await getProductsArray();
     res.send(fileAsJSON);
   } catch (error) {
     res.status(500).send({ message: error.message });
@@ -203,16 +212,88 @@ router.get("/:productId/reviews", async (req,res,next) => {
 });
 
 /* 3. Get a single product reviews */
-router.get("/:productId/reviews/:reviewId", async (req,res,next) => {
+router.get("/:productId/reviews/:reviewId", async (req, res, next) => {
   try {
     
+    // Retrieve the product with the specified ID from the database
+    const product = await getProductById(req.params.productId);
+
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    const review = await getReviewsById(req.params.reviewId);
+
+    if (!review) {
+      return res.status(404).send({ message: "Review not found" });
+    }
+
+    res.send(review);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
-})
+});
 
+// 4. Update a review for a specific product
+router.put("/:productId/reviews/:reviewId", async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    const reviewId = req.params.reviewId;
 
+    // Check if product with specified productId exists
+    const product = await getProductById(productId);
+    if (!product) {
+      res.status(404).send({ message: `Product with id ${productId} not found` });
+      return;
+    }
 
+    const reviews = await getReviews();
+    const index = reviews.findIndex((review) => review.id === reviewId);
 
+    if (index === -1) {
+      res.status(404).send({ message: `Review with id ${reviewId} not found` });
+      return;
+    }
+
+    const updatedReview = { ...reviews[index], ...req.body, updatedAt: new Date() };
+    reviews[index] = updatedReview;
+    await saveReviews(reviews);
+
+    res.send(updatedReview);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 5. Delete a review for a specific product
+router.delete("/:productId/reviews/:reviewId", async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    const reviewId = req.params.reviewId;
+
+    const product = await getProductById(productId);
+    if (!product) {
+      res.status(404).send({ message: `Product with id ${productId} not found` });
+      return;
+    }
+
+    const reviews = await getReviews();
+    const index = reviews.findIndex((review) => review.id === reviewId);
+
+    if (index === -1) {
+      res.status(404).send({ message: `Review with id ${reviewId} not found` });
+      return;
+    }
+
+    reviews.splice(index, 1);
+    await saveReviews(reviews);
+
+    res.send({ message: `Review with id ${reviewId} has been deleted` });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
+
+
