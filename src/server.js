@@ -11,7 +11,7 @@ import productsRouter from "./products/index.js"
 /*-----Imported Error Handlers-----*/
 
 const server = express();
-const port = process.env.port;
+const port = process.env.PORT;
 
 server.use(cors());
 server.use(express.json());
