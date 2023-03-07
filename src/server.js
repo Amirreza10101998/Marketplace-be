@@ -16,6 +16,8 @@ const port = process.env.PORT;
 server.use(cors());
 server.use(express.json());
 
+const whiteList = [process.env.FE_DEV_URL]
+
 
 const getPublicFilePath = () => {
   const _filename = fileURLToPath(import.meta.url);
