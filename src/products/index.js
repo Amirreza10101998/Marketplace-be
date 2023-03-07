@@ -4,6 +4,8 @@ import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import uniqid from "uniqid"
 import { parseFile, uploadImage } from "../utilities/uploads/index.js"
+import { pipeline } from "stream";
+import PdfPrinter from "pdfmake";
 
 /*----------Global Functions----------*/
 const getProductsFilePath = () => {
@@ -69,6 +71,62 @@ const saveReviews = async (reviews) => {
   const reviewsFilePath = await getReviewsFilePath();
   fs.writeFileSync(reviewsFilePath, JSON.stringify(reviews));
 };
+
+
+/*----------PDF Function----------*/
+const getPDFReadableStream = productsArray => {
+  // Define font files
+  const fonts = {
+    Courier: {
+      normal: "Courier",
+      bold: "Courier-Bold",
+      italics: "Courier-Oblique",
+      bolditalics: "Courier-BoldOblique",
+    },
+    Helvetica: {
+      normal: "Helvetica",
+      bold: "Helvetica-Bold",
+      italics: "Helvetica-Oblique",
+      bolditalics: "Helvetica-BoldOblique",
+    },
+  }
+
+  const printer = new PdfPrinter(fonts)
+
+  const content = productsArray.map(product => {
+    return [
+      { text: product.name, style: "header" },
+      { text: product.category, style: "subheader" },
+      { text: product.price, style: "subheader" },
+      "\n\n",
+    ]
+  })
+
+  const docDefinition = {
+    content: [...content],
+    defaultStyle: {
+      font: "Helvetica",
+    },
+    styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        font: "Courier",
+      },
+      subheader: {
+        fontSize: 15,
+        bold: false,
+      },
+    },
+  }
+
+  const pdfReadableStream = printer.createPdfKitDocument(docDefinition)
+  pdfReadableStream.end()
+
+  return pdfReadableStream
+} 
+
+
 
 const router = express.Router();
 
@@ -170,6 +228,8 @@ router.post("/:id/upload", parseFile.single("upload"), async (req, res, next) =>
     res.status(500).send({ message: error.message });
   }
 });
+
+
 
 /*----------Reviews----------*/
 /* 1. Post a product review */
@@ -293,6 +353,18 @@ router.delete("/:productId/reviews/:reviewId", async (req, res, next) => {
     next(error);
   }
 });
+
+/*----------PDF File Upload----------*/
+router.get("/download/pdf", async (req, res, next) => {
+  res.setHeader("Content-Disposition", "attachment; filename=test.pdf")
+
+  const products = await getProductsArray()
+  const source = getPDFReadableStream(products)
+  const destination = res
+  pipeline(source, destination, err => {
+    if (err) console.log(err)
+  })
+})
 
 export default router;
 
